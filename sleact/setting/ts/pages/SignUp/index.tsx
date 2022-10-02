@@ -14,7 +14,7 @@ const SignUp = () => {
 	const [signUpError, setSignUpError] = useState('');
 	const [signUpSuccess, setSignUpSuccess] = useState(false);
 
-// test
+
   const onChangePassword = useCallback(
     (e) => {
       setPassword(e.target.value);
