@@ -48,7 +48,7 @@ const config: Configuration = {
           ],
           env: {
             development: {
-              plugins: [require.resolve('react-refresh/babel')],
+              plugins: ['@emotion/babel-plugin', require.resolve('react-refresh/babel')],
             },
           },
         },
@@ -77,6 +77,7 @@ const config: Configuration = {
   devServer: {
     historyApiFallback: true, // react router
     port: 3090,
+	allowedHosts: "all",
     devMiddleware: { publicPath: '/dist/' },
     static: { directory: path.resolve(__dirname) },
   },
