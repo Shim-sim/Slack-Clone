@@ -35,7 +35,7 @@ const LogIn = () => {
   );
 
   if (data === undefined) {
-    return <div>로딩중...</div>;
+    return <div>로딩중....</div>;
   }
 
   if (data) {
