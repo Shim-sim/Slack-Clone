@@ -3,8 +3,13 @@ import React, { useCallback, useState, VFC } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { Success, Form, Error, Label, Input, LinkContainer, Button, Header } from './styles'
+import fetcher from '@utils/fetcher';
+import useSWR from 'swr';
+import { Redirect } from 'react-router';
 
 const SignUp = () => {
+	
+	const { data, error, revalidate } = useSWR('https://sleactserver.run.goorm.io/api/users', fetcher);
 	
 	const [email, onChangeEmail] = useInput('');
   const [nickname, onChangeNickname] = useInput('');
@@ -55,6 +60,10 @@ const SignUp = () => {
 		},
 		[email, nickname, password, passwordCheck, mismatchError],
 	);
+	
+	if (data) {
+		return <Redirect to="/workspace/channel" />;
+	}
 	
 	
 	return (
