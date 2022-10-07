@@ -1,5 +1,6 @@
-import React, { VFC, useCallback, useState } from 'react';
+import React, { VFC, useCallback, useState, useEffect } from 'react';
 import useInput from '@hooks/useInput';
+import useSocket from '@hooks/useSocket';
 import Menu from '@components/Menu';
 import Modal from '@components/Modal';
 import DMList from '@components/DMList';
@@ -20,6 +21,8 @@ import useSWR from 'swr';
 import { Redirect } from 'react-router';
 import gravatar from 'gravatar'
 import { Button, Input, Label } from '@pages/SignUp/styles';
+
+
 const Workspace: VFC = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showCreateWorkspaceModal, setShowCreateWorkspaceModal] = useState(false);
@@ -42,10 +45,26 @@ const Workspace: VFC = () => {
 		fetcher
 	);
 	
-	const { revalidate: revalidateMembers } = useSWR<IUser[]>(
-    userData && channel ? `https://sleactserver.run.goorm.io/api/workspaces/${workspace}/channels/${channel}/members` : null,
+	const { data: memberData } = useSWR<IUser[]>(
+    userData ? `https://sleactserver.run.goorm.io/api/workspaces/${workspace}/members` : null,
     fetcher,
   );
+	
+	const [socket, disconnect] = useSocket(workspace);
+	
+	useEffect(()=> {
+		if(channelData && userData && socket) {
+			console.log(socket);
+			socket.emit('login', { id: userData.id, channels: channelData.map((v) => v.id)});
+		}
+		
+	}, [socket, channelData, userData]);
+	
+	useEffect(()=> {
+		return () => {
+			disconnect();
+		}
+	}, [workspace, disconnect]);
 	
 	const onLogout = useCallback(()=> {
 		axios.post('https://sleactserver.run.goorm.io/api/users/logout', null, {
@@ -156,7 +175,7 @@ const Workspace: VFC = () => {
 							</WorkspaceModal>
 						</Menu>
 						<ChannelList />
-						<DMList />
+						<DMList userData={userData}/>
 					</MenuScroll>
 				</Channels>
 				<Chats>

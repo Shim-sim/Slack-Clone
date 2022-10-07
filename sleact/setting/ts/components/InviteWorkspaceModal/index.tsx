@@ -32,7 +32,7 @@ const InviteWorkspaceModal: FC<Props> = ({ show, onCloseModal, setShowInviteWork
         .post(`https://sleactserver.run.goorm.io/api/workspaces/${workspace}/members`, {
           email: newMember,
         })
-        .then((response) => {
+        .then(() => {
           revalidateMember();
           setShowInviteWorkspaceModal(false);
           setNewMember('');

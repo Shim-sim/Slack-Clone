@@ -4,9 +4,11 @@ import { Container, Header } from '@pages/DirectMessage/styles';
 import fetcher from '@utils/fetcher';
 import gravatar from 'gravatar';
 import { useParams } from 'react-router';
-import useSWR from 'swr'
-import ChatBox from '@components/ChatBox'
-import ChatList from '@components/ChatList'
+import useSWR from 'swr';
+import ChatBox from '@components/ChatBox';
+import ChatList from '@components/ChatList';
+import axios from 'axios';
+import { IDM } from '@typings/db';
 
 
 const DirectMessage = () => {
@@ -17,11 +19,28 @@ const DirectMessage = () => {
 		`https://sleactserver.run.goorm.io/api/workspaces/${workspace}/users/${id}`,fetcher
 	);
 	const { data: myData } = useSWR('https://sleactserver.run.goorm.io/api/users',fetcher);
-	const [chat, onChangeChat] = useInput('');
+	const [chat, onChangeChat, setChat] = useInput('');
+	const { data: chatData, mutate: mutateChat, revalidate} = useSWR<IDM[]>(
+    () => `https://sleactserver.run.goorm.io/api/workspaces/${workspace}/dms/${id}/chats?perPage=20&page=1`,
+    fetcher,
+  );
+	
 	
 	const onSubmitForm = useCallback((e)=> {
 		e.preventDefault();
-	}, []);
+		if(chat?.trim()) {
+			axios.post(`https://sleactserver.run.goorm.io/api/workspaces/${workspace}/dms/${id}/chats`, {
+				cotnent: chat,
+			})
+			.then(() => {
+				revalidate();
+				setChat('');
+			})
+			.catch((error)=> {
+				console.log(error);
+			})
+		}
+	}, [chat]);
 	
 	
 	if (!userData || !myData) {
@@ -37,9 +56,8 @@ const DirectMessage = () => {
 				<img src={gravatar.url(userData.email, { s: '24px', d: 'retro' })} alt={userData.nickname} />
 				<span>{userData.nickname}</span>
 			</Header>
-			<ChatList />
+			<ChatList chatData={chatData}/>
 			<ChatBox chat="chat" onChangeChat={onChangeChat} onSubmitForm={onSubmitForm}/>
-
 		</Container>
 		
 

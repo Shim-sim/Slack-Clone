@@ -15,14 +15,21 @@ interface Props {
 }
 const ChatBox: VFC<Props> = ({ chat, onSubmitForm, onChangeChat, placeholder }) => {
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
-	// onKeyDown 추가해야함
-	
-	
+
 	useEffect(()=> {
 		if(textareaRef.current) {
 			autosize(textareaRef.current);
 		}
 	}, [])
+	
+	const onKeydownChat = useCallback((e)=> {
+		if(e.key === 'Enter') {
+			if(!e.shiftKey) {
+				e.preventDefault();
+				onSubmitForm(e);
+			}
+		}
+	}, [onSubmitForm]);
  
 
   return (

@@ -1,24 +1,26 @@
-// import useSocket from '@hooks/useSocket';
 import { CollapseButton } from '@components/DMList/styles';
-// import useSocket from '@hooks/useSocket';
-import { IUser, IUserWithOnline } from '@typings/db';
+import useSocket from '@hooks/useSocket';
+import { IUser, IUserWithOnline, IDM } from '@typings/db';
 import fetcher from '@utils/fetcher';
 import React, { FC, useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { NavLink } from 'react-router-dom';
 import useSWR from 'swr';
 
-const DMList: FC = () => {
+interface Props {
+	userData?: IUser;
+}
+
+
+const DMList: FC<Props> = ({ userData }) => {
   const { workspace } = useParams<{ workspace?: string }>();
-  const { data: userData, error, revalidate, mutate } = useSWR<IUser>('https://sleactserver.run.goorm.io/api/api/users', fetcher, {
-    dedupingInterval: 2000, // 2초
-  });
   const { data: memberData } = useSWR<IUserWithOnline[]>(
     userData ? `https://sleactserver.run.goorm.io/api/workspaces/${workspace}/members` : null,
     fetcher,
   );
 	
-  // const [socket] = useSocket(workspace);
+	
+  const [socket] = useSocket(workspace);
   const [channelCollapse, setChannelCollapse] = useState(false);
   const [onlineList, setOnlineList] = useState<number[]>([]);
 
@@ -27,22 +29,21 @@ const DMList: FC = () => {
   }, []);
 
   useEffect(() => {
-    console.log('DMList: workspace 바꼈다', workspace);
     setOnlineList([]);
   }, [workspace]);
 
-  // useEffect(() => {
-  //   socket?.on('onlineList', (data: number[]) => {
-  //     setOnlineList(data);
-  //   });
-  //   // socket?.on('dm', onMessage);
-  //   // console.log('socket on dm', socket?.hasListeners('dm'), socket);
-  //   return () => {
-  //     // socket?.off('dm', onMessage);
-  //     // console.log('socket off dm', socket?.hasListeners('dm'));
-  //     socket?.off('onlineList');
-  //   };
-  // }, [socket]);
+  useEffect(() => {
+    socket?.on('onlineList', (data: number[]) => {
+      setOnlineList(data);
+    });
+    // socket?.on('dm', onMessage);
+    // console.log('socket on dm', socket?.hasListeners('dm'), socket);
+    return () => {
+      // socket?.off('dm', onMessage);
+      // console.log('socket off dm', socket?.hasListeners('dm'));
+      socket?.off('onlineList');
+    };
+  }, [socket]);
 
   return (
     <>
@@ -73,7 +74,7 @@ const DMList: FC = () => {
                   data-qa-presence-dnd="false"
                 />
                 <span>{member.nickname}</span>
-                {member.id === userData?.id && <span> (나)</span>}
+                {member.nickname === userData?.nickname && <span> (나)</span>}
               </NavLink>
             );
           })}
