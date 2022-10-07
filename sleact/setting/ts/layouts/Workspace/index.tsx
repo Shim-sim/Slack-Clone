@@ -2,6 +2,8 @@ import React, { VFC, useCallback, useState } from 'react';
 import useInput from '@hooks/useInput';
 import Menu from '@components/Menu';
 import Modal from '@components/Modal';
+import DMList from '@components/DMList';
+import ChannelList from '@components/ChannelList';
 import InviteChannelModal from '@components/InviteChannelModal';
 import InviteWorkspaceModal from '@components/InviteWorkspaceModal';
 import CreateChannelModal from '@components/CreateChannelModal'
@@ -29,7 +31,7 @@ const Workspace: VFC = () => {
   const [newUrl, onChangeNewUrl, setNewUrl] = useInput('');
 	
 	
-	const { workspace } = useParams<{ workspace: string }>();
+	const { workspace, channel } = useParams<{ workspace: string; channel: string }>();
 	const { data: userData, error, revalidate, mutate } = useSWR<IUser | false>(
 		'https://sleactserver.run.goorm.io/api/users',
 		fetcher
@@ -39,6 +41,11 @@ const Workspace: VFC = () => {
 		userData ? `https://sleactserver.run.goorm.io/api/workspaces/${workspace}/channels` : null,
 		fetcher
 	);
+	
+	const { revalidate: revalidateMembers } = useSWR<IUser[]>(
+    userData && channel ? `https://sleactserver.run.goorm.io/api/workspaces/${workspace}/channels/${channel}/members` : null,
+    fetcher,
+  );
 	
 	const onLogout = useCallback(()=> {
 		axios.post('https://sleactserver.run.goorm.io/api/users/logout', null, {
@@ -95,7 +102,7 @@ const Workspace: VFC = () => {
 	}, []);
 	
 	const onClickInviteWorkspace = useCallback(()=> {
-		
+		setShowInviteWorkspaceModal(true);
 	}, []);
 	
 	
@@ -148,11 +155,8 @@ const Workspace: VFC = () => {
 								<button onClick={onLogout}>로그아웃</button> 
 							</WorkspaceModal>
 						</Menu>
-						{channelData?.map((a)=> {
-							return (
-								<div>{a.name}</div>
-							)
-						})}
+						<ChannelList />
+						<DMList />
 					</MenuScroll>
 				</Channels>
 				<Chats>
