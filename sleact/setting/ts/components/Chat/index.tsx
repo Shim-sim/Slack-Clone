@@ -2,7 +2,8 @@ import { ChatWrapper } from '@components/Chat/styles';
 import { IDM, IChat } from '@typings/db';
 import React, { VFC, memo, useMemo } from 'react';
 import gravatar from 'gravatar';
-
+import dayjs from 'dayjs';
+import regexifySrtring from 'regexify-string';
 
 interface Props {
   data: IDM | IChat;
@@ -12,6 +13,18 @@ interface Props {
 const Chat: VFC<Props> = ({ data }) => {
 
   const user = 'Sender' in data ? data.Sender : data.User;
+	const result = regexifySrtring({
+		input: data.content,
+		pattern: /@\[.+?\]\(\d+?\)|\n/g,
+		decorator(match){
+			const arr = match.match(/@\[.+?\]\(\d+?\)/)/!;
+			if(arr) {
+				return (
+					<Link></Link>
+				)
+			}
+		}
+	})
 
 
   return (
@@ -21,12 +34,12 @@ const Chat: VFC<Props> = ({ data }) => {
       </div>
       <div className="chat-text">
         <div className="chat-user">
-          <b>{user.nickname}</b>
-          <span>{data.createdAt}</span>
+          <b>{dayjs(data.createdAt).format('h:mm A')}</b><br/>
+          <span>{data.content}</span>
         </div>
       </div>
     </ChatWrapper>
   );
 };
 
-export default memo(Chat);
+export default Chat;

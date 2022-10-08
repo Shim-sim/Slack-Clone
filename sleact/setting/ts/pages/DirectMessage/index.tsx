@@ -30,7 +30,7 @@ const DirectMessage = () => {
 		e.preventDefault();
 		if(chat?.trim()) {
 			axios.post(`https://sleactserver.run.goorm.io/api/workspaces/${workspace}/dms/${id}/chats`, {
-				cotnent: chat,
+				content: chat,
 			})
 			.then(() => {
 				revalidate();
@@ -57,7 +57,7 @@ const DirectMessage = () => {
 				<span>{userData.nickname}</span>
 			</Header>
 			<ChatList chatData={chatData}/>
-			<ChatBox chat="chat" onChangeChat={onChangeChat} onSubmitForm={onSubmitForm}/>
+			<ChatBox chat={chat} onChangeChat={onChangeChat} onSubmitForm={onSubmitForm}/>
 		</Container>
 		
 
