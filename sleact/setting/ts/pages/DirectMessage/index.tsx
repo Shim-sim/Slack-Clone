@@ -3,6 +3,7 @@ import useInput from '@hooks/useInput';
 import { Container, Header } from '@pages/DirectMessage/styles';
 import fetcher from '@utils/fetcher';
 import makeSection from '@utils/makeSection';
+import useSocket from '@hooks/useSocket';
 import gravatar from 'gravatar';
 import { useParams } from 'react-router';
 import useSWR, { useSWRInfinite } from 'swr';
@@ -27,29 +28,77 @@ const DirectMessage = () => {
     fetcher,
   );
 	
+	const [socket] = useSocket(workspace);
 	const isEmpty = chatData?.[0]?.length === 0;
 	const isReachingEnd = isEmpty || (chatData && chatData[chatData.length - 1]?.length < 20) || false;
-
 	const scrollbarRef = useRef<Scrollbars>(null);
-	const onSubmitForm = useCallback((e)=> {
-		e.preventDefault();
-		if(chat?.trim()) {
-			axios.post(`https://sleactserver.run.goorm.io/api/workspaces/${workspace}/dms/${id}/chats`, {
-				content: chat,
-			})
-			.then(() => {
-				revalidate();
-				setChat('');
-			})
-			.catch((error)=> {
-				console.log(error);
-			})
+	const onSubmitForm = useCallback(
+    (e) => {
+      e.preventDefault();
+      if (chat?.trim() && chatData) {
+        const savedChat = chat;
+        mutateChat((prevChatData) => {
+          prevChatData?.[0].unshift({
+            id: (chatData[0][0]?.id || 0) + 1,
+            content: savedChat,
+            SenderId: myData.id,
+            Sender: myData,
+            ReceiverId: userData.id,
+            Receiver: userData,
+            createdAt: new Date(),
+          });
+          return prevChatData;
+        }, false).then(() => {
+          setChat('');
+          scrollbarRef.current?.scrollToBottom();
+        });
+        axios
+          .post(`/api/workspaces/${workspace}/dms/${id}/chats`, {
+            content: chat,
+          })
+          .then(() => {
+            revalidate();
+          })
+          .catch(console.error);
+      }
+    },
+    [chat, chatData, myData, userData, workspace, id],
+  );
+	
+	const onMessage = useCallback((data: IDM) => {
+    // id는 상대방 아이디
+    if (data.SenderId === Number(id) && myData.id !== Number(id)) {
+      mutateChat((chatData) => {
+        chatData?.[0].unshift(data);
+        return chatData;
+      }, false).then(() => {
+        if (scrollbarRef.current) {
+          if (
+            scrollbarRef.current.getScrollHeight() <
+            scrollbarRef.current.getClientHeight() + scrollbarRef.current.getScrollTop() + 150
+          ) {
+            console.log('scrollToBottom!', scrollbarRef.current?.getValues());
+            setTimeout(() => {
+              scrollbarRef.current?.scrollToBottom();
+            }, 50);
+          }
+        }
+      });
+    }
+  }, []);
+	
+	useEffect(()=> {
+		socket?.on('dm', onMessage);
+		return () => {
+			socket?.off('dm', onMessage);
 		}
-	}, [chat]);
+	}, [socket, onMessage ]);
 	
 	
 	useEffect(()=> {
-		
+		if(chatData?.length === 1) {
+			scrollbarRef.current?.scrollToBottom();
+		}
 	}, []);
 	
 	
@@ -70,7 +119,6 @@ const DirectMessage = () => {
 				chatSections={chatSections}
 				ref={scrollbarRef} 
 				setSize={setSize} 
-				isEmpty={isEmpty} 
 				isReachingEnd={isReachingEnd}
 				/>
 			<ChatBox chat={chat} onChangeChat={onChangeChat} onSubmitForm={onSubmitForm}/>
